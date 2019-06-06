@@ -1,0 +1,365 @@
+if DB_ID('DBCITASMEDICAS') IS NOT NULL
+BEGIN
+	use master
+	drop database DBCITASMEDICAS
+end
+
+create database DBCITASMEDICAS 
+on primary(
+	name='DBCITASMEDICAS_MDF',
+	FILENAME='C:\primeraBD\DBCITASMEDICAS.mdf',
+	size=10mb,
+	maxsize=40mb,
+	filegrowth=5mb
+)
+
+LOG ON(
+	name='DBCITASMEDICAS_LDF',
+	FILENAME='C:\primeraBD\DBCITASMEDICAS.Ldf',
+	size=4mb,
+	maxsize=20mb,
+	filegrowth=10%
+)
+GO
+
+USE DBCITASMEDICAS
+CREATE TABLE paciente(
+	dni varchar(8) NOT NULL	primary key,
+	paterno varchar(20) NOT NULL,
+	materno varchar(20) NOT NULL,
+	nombres varchar(100) NOT NULL,
+	genero char(1) NOT NULL,
+	fec_nac date NOT NULL,
+	celular varchar(9) NOT NULL unique,
+	direccion varchar(100) NULL,
+	email varchar(100) NULL unique,
+	distrito varchar(50) NULL
+)
+GO
+
+CREATE TABLE medico(
+	dni varchar(8)NOT NULL	primary key,
+	paterno varchar(20) NOT NULL,
+	materno varchar(20) NOT NULL,
+	nombres varchar(100) NOT NULL,
+	genero char(1) NOT NULL,
+	fec_nac date NOT NULL,
+	celular varchar(9) NOT NULL unique,
+	direccion varchar(100) NULL,
+	email varchar(100) NULL unique,
+	distrito varchar(50) NULL,
+	cmp varchar(8)NOT NULL unique,
+	fec_contrato date NOT NULL
+)
+GO
+
+CREATE TABLE especialidad(
+	id_especialidad int primary key identity,
+	nombre varchar(50) NOT NULL
+)
+GO
+
+CREATE TABLE consultorio(
+	id_consultorio int primary key identity,
+	nombre varchar(50) NOT NULL,
+	anexo varchar(5) NULL
+)
+GO
+
+CREATE TABLE medesp(
+	idMedEsp int primary key identity,
+	dni varchar(8) NOT NULL,
+	id_especialidad int NOT NULL,
+	cod_espec varchar(5) NOT NULL
+)
+GO
+
+CREATE TABLE programacion(
+	id_programacion int primary key identity,
+	idMedEsp int NOT NULL,
+	id_consultorio int NOT NULL,
+	fecha_prog date NOT NULL,
+	hora_prog time NOT NULL,
+	estado varchar(20) NOT NULL
+)
+GO
+
+CREATE TABLE cita(
+	id_cita int primary key identity,
+	id_programacion int NOT NULL,
+	dni varchar(8) NOT NULL,
+	fec_reserva date NOT NULL,
+	condicion varchar(20) NOT NULL,
+	pago varchar(20) NOT NULL,
+	monto money NOT NULL
+)
+GO
+
+CREATE TABLE usuario(
+	email varchar(100) NOT NULL unique,
+	clave varchar(20) NOT NULL,
+	tipo varchar(20) NOT NULL
+)
+GO
+
+CREATE TABLE pais(
+	id_pais int NOT NULL primary key identity,
+	nombre varchar(50) NOT NULL
+)
+GO
+
+ALTER TABLE cita
+	add constraint dfl_fecha_reserva
+	default getdate() for fec_reserva
+GO
+
+ALTER TABLE medico
+	add constraint chk_fecha_contrat
+	CHECK (fec_contrato < GETDATE())
+GO
+
+alter table medesp
+add constraint fk_medico_MedEsp
+foreign key (dni) references medico(dni)
+go
+
+alter table medico
+add id_pais int
+go
+
+alter table medico
+add constraint fk_pais_medico
+foreign key (id_pais) references pais(id_pais)
+go
+
+
+
+alter table medesp
+add constraint fk_especialidad_MedEsp
+foreign key (id_especialidad) references especialidad(id_especialidad)
+go
+
+alter table programacion
+add constraint fk_MedEsp_programacion
+foreign key (idMedEsp) references MedEsp(idMedEsp)
+go
+
+alter table programacion
+add constraint fk_consultorio_programacion
+foreign key (id_consultorio) references consultorio(id_consultorio)
+go
+
+alter table cita
+add constraint fk_programacion_cita
+foreign key (id_programacion)references programacion(id_programacion)
+go
+
+alter table cita
+add constraint fk_paciente_cita
+foreign key (dni)references paciente(dni)
+go
+
+
+sp_detach_db @dbname='TERCERSEMESTRE' 
+
+
+insert into especialidad values ('Pediatria')
+insert into especialidad values ('Oncologia')
+insert into especialidad values ('Cirugia')
+insert into especialidad values ('Traumatologia')
+insert into especialidad values ('Ginecologia')
+insert into especialidad values ('Otorinolaringologia')
+insert into especialidad values ('Oftalmologia')
+insert into especialidad values ('Neurologia')
+insert into especialidad values ('Oftalmologia')
+insert into especialidad values ('Neurologia')
+insert into especialidad values ('Urologia')
+insert into especialidad values ('Neurocirugia')
+
+insert into consultorio values ('A1','4122')
+insert into consultorio values ('A2','4222')
+insert into consultorio values ('B1','4125')
+insert into consultorio values ('B2','4318')
+insert into consultorio values ('C1','')
+insert into consultorio values ('C2','4096')
+insert into consultorio values ('D1','4122')
+insert into consultorio values ('D2','')
+insert into consultorio values ('E1','4190')
+insert into consultorio values ('E2','4584')
+
+insert into medico values('11358980','ATAUCCANCHA','HUILCAS','MARIA','F','2001-06-29','910898384','Av. Bayovar S/N','maria@hotmail.com','SJL','21345',GETDATE())
+
+insert into Paciente values('70855673','ROJAS','SIRIACO','ANGELLO','M','2001-07-03','987654312','Av. Su Casa Lte. 4','angelo@hotmail.com','SJL')
+
+insert into MedEsp values('11358980',11,'12345')
+insert into MedEsp values('11358980',1,'54321')
+
+delete from MedEsp where idMedEsp=2
+
+alter table medesp
+add constraint uq_cod_esp
+unique(cod_espec)
+
+insert into programacion values(1,4,'2019-03-24','08:00','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','08:30','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','09:00','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','09:30','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','10:00','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','10:30','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','11:00','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','11:30','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','12:00','DISPONIBLE')
+insert into programacion values(1,4,'2019-03-24','12:30','DISPONIBLE')
+
+insert into programacion values(2,7,'2019-03-24','14:00','DISPONIBLE')
+insert into programacion values(2,7,'2019-03-24','14:30','DISPONIBLE')
+insert into programacion values(2,7,'2019-03-24','15:00','DISPONIBLE')
+insert into programacion values(2,7,'2019-03-24','15:30','DISPONIBLE')
+insert into programacion values(2,7,'2019-03-24','16:00','DISPONIBLE')
+insert into programacion values(2,7,'2019-03-24','16:30','DISPONIBLE')
+insert into programacion values(2,7,'2019-03-24','17:00','DISPONIBLE')
+insert into programacion values(2,7,'2019-03-24','17:30','DISPONIBLE')	
+
+insert into cita values(5,'70855673',GETDATE(),'RESERVADO','CANCELADO',50)
+insert into cita values(25,'70855673',GETDATE(),'RESERVADO','PENDIENTE',60)
+
+select * from especialidad
+select * from consultorio
+select * from medico
+select * from Paciente
+select * from pais
+SELECT * FROM programacion
+select * from cita
+
+/*INCREMENTAR EN 10% EL MONTO DE UNA CITA PARA TODOS LOS REGISTROS*/
+update cita set monto=monto+monto*0.1
+
+/*INSERTAR 'SIN ANEXO' A TODOS LOS REGISTROS NULOS O VACIOS DEL CAMPO anexo DE LA TA TABLA CONSULTORIO*/
+update consultorio set anexo='S/A' where anexo=''or anexo is null
+
+/*MODIFICAR EL CODIGO DE ESPECIALISTA(cod_espec) DE LA TABLA MEDESP DE LA DRA MARIA UROLOGIA A 22444*/
+update MedEsp set cod_espec='22444' where id_especialidad=(select id_especialidad from especialidad where nombre='Urologia')
+
+/*TIPOS DE RELACIONES (INTERNAS Y EXTERNAS)*/
+/*inner join*/
+
+select * from medico A inner join pais B on A.id_pais=B.id_pais
+
+select * from medico,pais
+
+/*left join sin condicion*/
+select * from medico A left join pais B on A.id_pais=B.id_pais
+
+/*right join sin condicion*/
+select * from medico A right join pais B on A.id_pais=B.id_pais
+
+/*lefth join con condicion*/
+select * from medico A left join pais B on A.id_pais=B.id_pais 
+where B.id_pais is null
+
+/*rigth join con condicion*/
+select * from medico A right join pais B on A.id_pais=B.id_pais 
+where A.id_pais is null
+
+/*full outer join sin condicion*/
+select * from medico A full outer join pais B on A.id_pais=B.id_pais
+
+/*full outer join con condicion*/
+select * from medico A full outer join pais B on A.id_pais=B.id_pais
+where A.id_pais is null or B.id_pais is null
+
+/*MOSTRAR LA SUMA TOTAL DEL MONTO DE LA TABLA CITA USANDO FUNCIONES DE AGREGADO DEL SISTEMA*/
+select sum(monto) from cita
+
+/*mostrar las claves primarias de la tabla programacion agrupadas desde la */
+select distinct id_programacion from cita 
+select id_programacion from cita group by id_programacion
+
+select * from programacion
+/**/
+
+/*select sum(monto) from cita where fec_reserva=year(fec_reserva)*/
+
+select year(fec_reserva), sum(monto) from cita group by year(fec_reserva)
+
+
+
+/*MOSTRAR LOS DATOS DE LOS MEDICOS Y DEL PAIS DE ORIGEN*/
+
+select med.dni,(med.paterno+' '+med.materno+' '+med.nombres) as [Nombre Completo], cmp as [Colegio Medico], pai.nombre as [Pais de Origen]
+from medico med inner join pais pai 
+on med.id_pais=pai.id_pais
+
+/*inner join implicito*/
+
+select med.dni,(med.paterno+' '+med.materno+' '+med.nombres) as [Nombre Completo], cmp as [Colegio Medico], pai.nombre as [Pais de Origen]
+from medico med ,pais pai 
+where med.id_pais=pai.id_pais
+
+/*MOSTRAR LOS DATOS DE LOS MEDICOS Y DE SU ESPECIALIDAD USANDO INNER JOIN IMPLICITO Y EXPLICITO*/
+
+select med.dni,(med.paterno+' '+med.materno+' '+med.nombres) as [Nombre Completo], cmp as [Colegio Medico], me.id_especialidad as [ID Especialidad],esp.nombre as [Especialidad]
+from medico med inner join MedEsp me
+on med.dni=me.dni inner join especialidad esp
+on esp.id_especialidad=me.id_especialidad
+go
+
+select med.dni,(med.paterno+' '+med.materno+' '+med.nombres) as [Nombre Completo], cmp as [Colegio Medico], esp.nombre as [Pais de Origen], esp.nombre as[Especialidad]
+from medico med ,MedEsp mesp, especialidad esp
+where med.dni=mesp.dni AND mesp.id_especialidad=esp.id_especialidad
+go
+
+/*MOSTRAR LOS DATOS DEL PACIENTE Y EL NOMBRE DE SU MEDICO TRATANTE EN LAS DISTINTAS CITAS USANDO INNER JOIN*/
+
+select cita.fec_reserva,cita.condicion ,paci.dni,(paci.paterno+' '+paci.materno+' '+paci.nombres) as [Nombre Paciente] ,med.dni,(med.paterno+' '+med.materno+' '+med.nombres) as [Nombre Medico]
+from cita cita,Paciente paci,medico med,programacion prog,consultorio con, MedEsp
+where cita.dni=paci.dni and cita.id_programacion=prog.id_programacion and prog.idMedEsp=MedEsp.idMedEsp and MedEsp.dni=med.dni and prog.id_consultorio=con.id_consultorio
+go
+
+/*MOSTRAR LA SUMA DE LOS MONTOS DE LA TABLA CITA AGRUPADOS POR AÑO Y MES*/
+
+select year(fec_reserva) as[AÑO], month(fec_reserva) as[MES], SUM(monto) as[MONTO TOTAL]
+from cita 
+group by year(fec_reserva), month(fec_reserva)
+GO
+
+USE DBCITASMEDICAS
+/*FUNCIONES DE AGREGADO COUNT*/
+/*MOSTRAR LA CANTIDAD DE PACIENTES ATENDIDOS Y AGRUPADOS POR ESPECIALIDAD MEDICA*/
+
+select esp.nombre as [Especialidad], count(cit.dni) as[Cantidad]
+from especialidad esp inner join MedEsp me
+on esp.id_especialidad=me.id_especialidad inner join programacion pro
+on me.idMedEsp=pro.idMedEsp inner join cita cit
+on cit.id_programacion=pro.id_programacion
+group by esp.nombre
+
+/*MOSTRAR LA CANTIDAD DE PACIENTES ATENDIDOS Y EL MONTO, AGRUPADOS POR ESPECIALIDAD MEDICA*/
+
+select esp.nombre as [Especialidad], count(cit.dni) as[Cantidad], SUM(cit.monto) as [Monto Total]
+from especialidad esp inner join MedEsp me
+on esp.id_especialidad=me.id_especialidad inner join programacion pro
+on me.idMedEsp=pro.idMedEsp inner join cita cit
+on cit.id_programacion=pro.id_programacion
+group by esp.nombre
+
+/*FUNCIONES DE AGREGADO MAX Y MIN*/
+/*MOSTRAR EL MONTO MAXIMO Y MINIMO EN COLUMNAS DISTINTAS DE LA TABLA CITA*/
+
+select max(monto) as[MONTO MAXIMO], min(monto) as [MONTO MINIMO]
+from cita
+
+/*MOSTRAR EL MONTO MAXIMO Y MINIMO EN COLUMNAS DISTINTAS DE LA TABLA CITA AGRUPADO POR AÑOS*/
+
+select YEAR(fec_reserva) as[FECHA DE RESERVA], max(monto) as[MONTO MAXIMO], min(monto) as [MONTO MINIMO]
+from cita
+group by YEAR(fec_reserva)
+order by YEAR(fec_reserva)desc
+GO
+
+/*IMPLEMENTAR UN SCRIPT QUE MUESTRE LOS DATOS DEL PACIENTE QUE TUVO MAYOR CANTIDAD DE ATENCIONES*/
+
+select cit.dni,max(count(cit.dni))
+from cita cit, Paciente pac 
+where cit.dni=pac.dni  
+
